@@ -1,0 +1,11 @@
+#!/bin/sh
+# Public pages only: refuse anything that is not a page, stylesheet, image or readme,
+# and anything that looks like source code or a secret.
+allowed='^(README\.md|\.nojekyll|\.githooks/pre-commit|[A-Za-z0-9_/-]*\.(html|css|png|jpg|svg|ico))$'
+bad=$(git diff --cached --name-only --diff-filter=ACMR | grep -Ev "$allowed")
+if [ -n "$bad" ]; then
+  echo "Blocked: only public pages belong in this repo:"; echo "$bad"; exit 1
+fi
+if git diff --cached -U0 -- . ':!.githooks' | grep -E '^\+' | grep -Eiq 'import (SwiftUI|Foundation)|func |API_KEY|SECRET|BEGIN [A-Z ]*PRIVATE KEY|sk-[A-Za-z0-9]{20}'; then
+  echo "Blocked: staged text looks like code or a secret."; exit 1
+fi
